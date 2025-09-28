@@ -1,4 +1,4 @@
-# Muon Track Simulation & Time‑Only Reconstruction
+# Muon Track Simulation Reconstruction
 
 This repo contains a **clean, reproducible pipeline** to
 1) **simulate** a straight muon-like track in water,  
@@ -36,6 +36,20 @@ poisson_paths, stats = generate_multiple_poisson_files(
     output_dir=OUT_DIR
 )
 ```
+| Label | Start `x0` (m)   | Zenith (°)        | Azimuth (°)            | Why this case matters                                      |
+| ----: | ---------------- | ----------------- | ---------------------- | ---------------------------------------------------------- |
+|     A | (   0,   0,   0) | 120               | 45                     | Baseline (your default truth).                             |
+|     B | ( 300,   0,   0) | 120               | 45                     | Shifted inside volume; similar direction.                  |
+|     C | (   0, 300,   0) | 60                | 135                    | Up-going-ish, diagonal azimuth.                            |
+|     D | (   0,   0, 300) | 30                | 270                    | Shallow zenith (near down-going), axis-aligned az.         |
+|     E | (-600,   0,   0) | 100               | 20                     | Starts just outside x-min; through-going.                  |
+|     F | (   0,-600,   0) | 150               | 200                    | Starts just outside y-min; near horizontal.                |
+|     G | (   0,   0,-600) | 90                | 0                      | Exactly horizontal along +x (max Cherenkov cone symmetry). |
+|     H | ( 500, 500, 500) | 80                | 225                    | Corner entry, slanted track.                               |
+|     I | (-500, 500,-500) | 140               | 315                    | Opposite corner; near-horizontal.                          |
+|     J | (   0,   0,   0) | 60                | 225                    | Mirror of C around vertical; checks azimuth wrapping.      |
+|     K | (   0,   0,   0) | **60**            | **225+180** (=405→225) | **Antipode of J** → probes 180° flip handling.             |
+|     L | (   0,   0,   0) | **180−120** (=60) | **45+180** (=225)      | **Antipode of A** → same line, reverse direction.          |
 
 ### 2) Load Events
 ```python
@@ -111,14 +125,23 @@ pip install iminuit
 ## Functions (what they do)
 
 ### Simulation
-- **`perp_distance(x0, u, x_dom)`** → Perpendicular distance \(r_\perp\) from DOM to the infinite track.  
-- **`intensity(r_perp)`** → Expected relative intensity \(\propto e^{-d/L_\text{att}} / d^2\), with \(d=r_\perp/\sin\theta_C\) and a near‑field clamp.  
-- **`arrival_time(s0, r_perp)`** → First‑photon Cherenkov arrival time at a DOM (ns):  
-  \[ t_\text{hit} = s_0/c \;-\; r_\perp/(c\tan\theta_C) \;+\; (n/c)\, r_\perp/\sin\theta_C \;+\; t_\text{off} \]
+- **`perp_distance(x0, u, x_dom)`** → Perpendicular distance $r_\perp$ from DOM to the infinite track.  
+- **`intensity(r_perp)`** → Expected relative intensity $\propto e^{-d/L_{\text{att}}} / d^2$, with $d=r_\perp/\sin\theta_C$ and a near-field clamp.  
+- **`arrival_time(s0, r_perp)`** → First-photon Cherenkov arrival time at a DOM (ns):
+
+$$
+t_{\text{hit}}
+=\frac{s_0}{c}
+-\frac{r_\perp}{c\,\tan\theta_C}
++\frac{n}{c}\,\frac{r_\perp}{\sin\theta_C}
++t_{\text{off}}
+$$
 
 ### Poissonization
-- **`generate_poisson_data(hits, E_total, K_min, seed)`** → Converts continuous expectations to integer counts: `K ~ Poisson(λ)`, scaled so \(\sum λ = E_\text{total}\). Drops DOMs with `K < K_min`.
+- **`generate_poisson_data(hits, E_total, K_min, seed)`** → Converts continuous expectations to integer counts: $K \sim \text{Poisson}(\lambda)$, scaled so $\sum \lambda = E_{\text{total}}$. Drops DOMs with $K < K_{\min}$.
+
 - **`generate_multiple_poisson_files(hits, n_files, E_total, K_min, start_seed, output_dir)`** → Repeats `generate_poisson_data` and writes each event as `poisson_evt_XXXX.npz` under `output_dir`.
+
 
 ### Reconstruction
 - **`reconstruct_one(poisson_hits)`** → Time‑only χ² fit for `(θ, φ, b1, b2, t_off)`. Uses dual‑seed (`u` and `−u`) to mitigate 180° flips. Returns a dict including:
