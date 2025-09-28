@@ -12,7 +12,7 @@ The code lives in a single notebook (`sim_test2.ipynb`) that is easy to read top
 
 ## What’s inside (high level)
 
-- **Simulation block**: detector geometry (3D DOM grid), muon track, analytic Cherenkov timing & intensity, hit selection.
+- **Simulation block**: detector geometry (3D DOM grid), muon track (Free to change the starting position and angle), analytic Cherenkov timing & intensity, hit selection.
 - **Poissonization block**: converts expected intensities → integer counts with thresholds; optionally saves each event to disk.
 - **Reconstruction block**: time‑only χ² fit of `(θ, φ, b1, b2, t_off)`; dual‑seed (`u` and `−u`) to curb 180° flips.
 - **Plotting block**: Angular Error CDF, Reduced χ² histogram, Angular error vs hits, Zenith/Azimuth, ΣK (energy proxy).
